@@ -1,0 +1,317 @@
+openapi: 3.1.0
+info:
+  title: API de Arquitectura Robusta
+  description: |-
+    API diseñada para garantizar atributos de calidad como latencia (≤200ms), disponibilidad (99.9% SLA) y escalabilidad (10,000 usuarios concurrentes).
+    Los endpoints están optimizados para aplicaciones web y mobile, con esquemas detallados y ejemplos concretos.
+  version: 1.0.0
+  contact:
+    name: Equipo de Integración
+    email: integracion@example.com
+servers:
+  - url: https://api.example.com/v1
+    description: Entorno de producción
+  - url: https://sandbox.api.example.com/v1
+    description: Entorno de pruebas
+paths:
+  /users:
+    get:
+      tags:
+        - Usuarios
+      summary: Obtener lista de usuarios
+      description: Retorna una lista paginada de usuarios, optimizada para latencia y escalabilidad.
+      operationId: getUsers
+      parameters:
+        - name: page
+          in: query
+          description: Número de página
+          required: false
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: limit
+          in: query
+          description: Límite de usuarios por página
+          required: false
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+      responses:
+        "200":
+          description: Lista de usuarios retornada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/User"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+              examples:
+                example-1:
+                  value:
+                    data:
+                      - id: "usr-12345"
+                        name: "Juan Pérez"
+                        email: "juan.perez@example.com"
+                        status: "active"
+                    pagination:
+                      page: 1
+                      limit: 20
+                      total: 100
+        "400":
+          description: Parámetros de consulta inválidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example-1:
+                  value:
+                    code: "INVALID_QUERY_PARAM"
+                    message: "El parámetro 'limit' debe ser un entero entre 1 y 100."
+                    details:
+                      limit: "150"
+        "401":
+          description: No autorizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example-1:
+                  value:
+                    code: "UNAUTHORIZED"
+                    message: "Token de autenticación no proporcionado o inválido."
+        "429":
+          description: Demasiadas solicitudes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example-1:
+                  value:
+                    code: "RATE_LIMIT_EXCEEDED"
+                    message: "Se ha excedido el límite de solicitudes. Intente nuevamente más tarde."
+        "500":
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example-1:
+                  value:
+                    code: "INTERNAL_SERVER_ERROR"
+                    message: "Ocurrió un error inesperado. Por favor, intente nuevamente."
+    post:
+      tags:
+        - Usuarios
+      summary: Crear un nuevo usuario
+      description: Crea un nuevo usuario con validación de datos y manejo de errores para garantizar consistencia.
+      operationId: createUser
+      requestBody:
+        description: Datos del usuario a crear
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserCreate"
+            examples:
+              example-1:
+                value:
+                  name: "Ana Gómez"
+                  email: "ana.gomez@example.com"
+                  status: "active"
+      responses:
+        "201":
+          description: Usuario creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+              examples:
+                example-1:
+                  value:
+                    id: "usr-67890"
+                    name: "Ana Gómez"
+                    email: "ana.gomez@example.com"
+                    status: "active"
+        "400":
+          description: Datos de entrada inválidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example-1:
+                  value:
+                    code: "INVALID_INPUT"
+                    message: "El campo 'email' es obligatorio y debe ser una dirección válida."
+                    details:
+                      email: "Formato inválido"
+        "409":
+          description: Conflicto (usuario ya existe)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example-1:
+                  value:
+                    code: "USER_ALREADY_EXISTS"
+                    message: "Ya existe un usuario con el email proporcionado."
+        "500":
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /users/{userId}:
+    get:
+      tags:
+        - Usuarios
+      summary: Obtener un usuario por ID
+      description: Retorna los detalles de un usuario específico, optimizado para latencia.
+      operationId: getUserById
+      parameters:
+        - name: userId
+          in: path
+          description: ID del usuario
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: "usr-12345"
+      responses:
+        "200":
+          description: Usuario retornado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+              examples:
+                example-1:
+                  value:
+                    id: "usr-12345"
+                    name: "Juan Pérez"
+                    email: "juan.perez@example.com"
+                    status: "active"
+        "404":
+          description: Usuario no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                example-1:
+                  value:
+                    code: "USER_NOT_FOUND"
+                    message: "No se encontró un usuario con el ID proporcionado."
+        "500":
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: ID único del usuario
+          example: "usr-12345"
+        name:
+          type: string
+          description: Nombre completo del usuario
+          example: "Juan Pérez"
+        email:
+          type: string
+          format: email
+          description: Correo electrónico del usuario
+          example: "juan.perez@example.com"
+        status:
+          type: string
+          enum: ["active", "inactive", "suspended"]
+          description: Estado del usuario
+          example: "active"
+      required:
+        - id
+        - name
+        - email
+        - status
+
+    UserCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Nombre completo del usuario
+          example: "Ana Gómez"
+        email:
+          type: string
+          format: email
+          description: Correo electrónico del usuario
+          example: "ana.gomez@example.com"
+        status:
+          type: string
+          enum: ["active", "inactive"]
+          description: Estado inicial del usuario
+          example: "active"
+      required:
+        - name
+        - email
+        - status
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          description: Número de página actual
+          example: 1
+        limit:
+          type: integer
+          description: Límite de elementos por página
+          example: 20
+        total:
+          type: integer
+          description: Total de elementos disponibles
+          example: 100
+      required:
+        - page
+        - limit
+        - total
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Código de error específico
+          example: "INVALID_INPUT"
+        message:
+          type: string
+          description: Mensaje descriptivo del error
+          example: "El campo 'email' es obligatorio y debe ser una dirección válida."
+        details:
+          type: object
+          description: Detalles adicionales del error (opcional)
+          additionalProperties: true
+          example:
+            email: "Formato inválido"
+      required:
+        - code
+        - message

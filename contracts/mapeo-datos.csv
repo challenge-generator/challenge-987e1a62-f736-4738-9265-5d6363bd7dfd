@@ -1,0 +1,13 @@
+origen,destino,tipo,obligatoriedad,regla_transformacion,ejemplo_origen,ejemplo_destino
+"user.id","usuario.uuid",string,obligatorio,"Generar UUID v4 si no existe","123","usr-12345-6789-abcdef"
+"user.name","usuario.nombre",string,obligatorio,"Trim y capitalizar","  juan perez  ","Juan Perez"
+"user.email","usuario.correo",string,obligatorio,"Validar formato email","juan@example","juan@example.com"
+"user.status","usuario.estado",string,obligatorio,"Mapear valores: active→ACTIVO, inactive→INACTIVO, suspended→SUSPENDIDO","active","ACTIVO"
+"user.created_at","usuario.fecha_creacion",datetime,obligatorio,"Convertir a ISO 8601","2023-01-01T00:00:00Z","2023-01-01T00:00:00.000Z"
+"user.updated_at","usuario.fecha_actualizacion",datetime,opcional,"Convertir a ISO 8601 si existe","2023-01-02T00:00:00Z","2023-01-02T00:00:00.000Z"
+"payment.amount","pago.monto",number,obligatorio,"Convertir a decimal con 2 decimales","100.5","100.50"
+"payment.currency","pago.moneda",string,obligatorio,"Validar código ISO 4217","USD","USD"
+"payment.status","pago.estado",string,obligatorio,"Mapear valores: pending→PENDIENTE, completed→COMPLETADO, failed→FALLIDO","pending","PENDIENTE"
+"order.items[].product_id","pedido.items[].id_producto",string,obligatorio,"Mantener valor","prod-123","prod-123"
+"order.items[].quantity","pedido.items[].cantidad",integer,obligatorio,"Validar mínimo 1","2","2"
+"order.items[].price","pedido.items[].precio",number,obligatorio,"Convertir a decimal con 2 decimales","19.99","19.99"

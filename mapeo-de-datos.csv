@@ -1,0 +1,83 @@
+origen,destino,tipo,obligatoriedad,regla_transformacion,ejemplo_origen,ejemplo_destino,notas
+cliente_id,client_id,String,Sí,"Normalizar UUID (lowercase, sin guiones)","A1B2-C3D4-E5F6","a1b2c3d4e5f6",""
+saldo_cuenta,account_balance,Number,Sí,"Convertir a BigDecimal con 2 decimales",1500.50,1500.50,""
+numero_cuenta,account_number,String,Sí,"Validar formato IBAN y normalizar (uppercase)","es91 2100 0418 4502 0005 1332","ES9121000418450200051332",""
+tipo_transaccion,transaction_type,String,Sí,"Mapear a valores permitidos: DEBITO, CREDITO","TRANSFERENCIA","DEBITO",""
+monto,amount,Number,Sí,"Validar > 0 y convertir a BigDecimal",1250.75,1250.75,""
+concepto,description,String,No,"Limitar a 255 caracteres y sanitizar","Pago de alquiler",Pago de alquiler,""
+timestamp,created_at,String,Sí,"Convertir a ISO-8601","2023-10-15T14:30:00Z","2023-10-15T14:30:00Z",""
+token_jwt,auth_token,String,Sí,"Validar firma y expiración",eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...,"***REDACTADO***","Token JWT nunca se almacena en texto claro"
+limite_diario,daily_limit,Number,Sí,"Convertir a BigDecimal",5000.00,5000.00,""
+estado_transaccion,transaction_status,String,Sí,"Mapear a valores permitidos: PENDIENTE, COMPLETADA, RECHAZADA","EN_PROCESO","PENDIENTE",""
+fecha_valor,value_date,String,Sí,"Convertir a ISO-8601 (fecha sin hora)","15/10/2023","2023-10-15",""
+canal,channel,String,Sí,"Mapear a valores permitidos: MOBILE, WEB, ATM",APP,MOBILE,""
+id_transaccion_externa,external_tx_id,String,No,"Validar formato UUID",TXN-20231015-1432-0001,TXN-20231015-1432-0001,""
+usuario_creacion,created_by,String,Sí,"Extraer sub del JWT",user123,user123,""
+
+// Campos adicionales para auditoría (no mapeados desde origen)
+id_auditoria,audit_id,String,Sí,"Generar UUID v4",,"a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d","Creado por el Servicio de Auditoría"
+fecha_auditoria,audit_timestamp,String,Sí,"Timestamp en ISO-8601",,"2023-10-15T14:32:10Z",""
+operacion_auditoria,audit_operation,String,Sí,"Mapear a valores permitidos: CREATE, UPDATE, DELETE",,"CREATE",""
+
+// Campos para errores (no mapeados desde origen)
+codigo_error,error_code,String,No,"Mapear a códigos estándar: INVALID_DATA, INSUFFICIENT_FUNDS, etc.",,"INVALID_DATA",""
+mensaje_error,error_message,String,No,"Mensaje descriptivo en inglés",,"Invalid account number format",""
+
+## Reglas de Transformación Adicionales
+1. **Normalización de UUID**: Todos los UUIDs deben convertirse a minúsculas y sin guiones.
+2. **Formato IBAN**: Validar longitud y país (ES para España) y normalizar a uppercase sin espacios.
+3. **BigDecimal**: Todos los montos monetarios deben manejarse con precisión de 2 decimales.
+4. **Sanitización de texto**: Eliminar caracteres especiales y limitar longitud máxima.
+5. **Zonas horarias**: Todos los timestamps deben convertirse a UTC.
+
+## Validación de Obligatoriedad
+| Campo            | Validación                                                                 |
+|------------------|----------------------------------------------------------------------------|
+| cliente_id       | UUID válido (formato y versión)                                            |
+| numero_cuenta    | IBAN válido y registrado en el sistema                                     |
+| monto            | > 0 y <= limite_diario                                                    |
+| token_jwt        | Firma válida, no expirado y scopes adecuados (ej: "transfers:write")   |
+| canal            | Uno de los valores permitidos (MOBILE, WEB, ATM)                           |
+
+## Ejemplo de Transformación Completa
+**Entrada (JSON)**:
+```json
+{
+  "cliente_id": "A1B2-C3D4-E5F6",
+  "saldo_cuenta": 1500.50,
+  "numero_cuenta": "es91 2100 0418 4502 0005 1332",
+  "tipo_transaccion": "TRANSFERENCIA",
+  "monto": 1250.75,
+  "concepto": "Pago de alquiler",
+  "timestamp": "2023-10-15T14:30:00Z",
+  "token_jwt": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "limite_diario": 5000,
+  "estado_transaccion": "EN_PROCESO",
+  "fecha_valor": "15/10/2023",
+  "canal": "APP"
+}
+```
+
+**Salida (JSON)**:
+```json
+{
+  "client_id": "a1b2c3d4e5f6",
+  "account_balance": 1500.50,
+  "account_number": "ES9121000418450200051332",
+  "transaction_type": "DEBITO",
+  "amount": 1250.75,
+  "description": "Pago de alquiler",
+  "created_at": "2023-10-15T14:30:00Z",
+  "auth_token": "***REDACTADO***",
+  "daily_limit": 5000.00,
+  "transaction_status": "PENDIENTE",
+  "value_date": "2023-10-15",
+  "channel": "MOBILE",
+  "created_by": "user123",
+  "audit_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+  "audit_timestamp": "2023-10-15T14:32:10Z",
+  "audit_operation": "CREATE"
+}
+```
+
+---
